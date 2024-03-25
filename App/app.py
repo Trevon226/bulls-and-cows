@@ -1,11 +1,13 @@
 import os, csv
 import datetime
-from flask import Flask, request, redirect, render_template, url_for, flash
+from json import dumps
+from flask import Flask, jsonify, request, redirect, render_template, url_for, flash
 from flask_cors import CORS
 from sqlalchemy.exc import IntegrityError
 from flask_jwt_extended import (
     JWTManager,
     create_access_token,
+    get_jwt_identity,
     jwt_required,
     set_access_cookies,
     unset_jwt_cookies,
@@ -116,7 +118,6 @@ def logout_action():
 # *************************************
 
 # Page Routes (To Update)
-
 @app.route("/app", methods=['GET'])
 @app.route("/app/<int:pokemon_id>", methods=['GET'])
 @jwt_required()
@@ -128,13 +129,23 @@ def home_page(pokemon_id=1):
 
 @app.route("/login", methods=['POST'])
 def login_action():
-  # implement login
-  return "Login Action"
+  user = User.query.filter_by(username=request.form["username"]).first()
+  if not user or not user.check_password(request.form["password"]):
+    #flash(dumps({"error":'bad username/password given'}))
+    flash("Incorrect username or password")
+    return redirect(url_for('login_action'))
+  token = create_access_token(identity=user)
+  response = redirect(url_for('home_page'))
+  set_access_cookies(response, token)
+  flash("Login Successful")
+  return response
 
 @app.route("/pokemon/<int:pokemon_id>", methods=['POST'])
 @jwt_required()
 def capture_action(pokemon_id):
   # implement save newly captured pokemon, show a message then reload page
+  current_user.catch_pokemon(pokemon_id,request.form['text'])
+  flash("pokemon with id cauyght")
   return redirect(request.referrer)
 
 @app.route("/rename-pokemon/<int:pokemon_id>", methods=['POST'])
