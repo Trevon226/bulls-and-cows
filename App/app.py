@@ -123,7 +123,9 @@ def logout_action():
 @jwt_required()
 def home_page(pokemon_id=1):
     # update pass relevant data to template
-    return render_template("home.html")
+    poke=Pokemon.query.filter_by(id=pokemon_id).first()
+    captured=UserPokemon.query.filter_by(user_id=current_user.id).all()
+    return render_template("home.html", poke=poke, pokemon=Pokemon.query.all(), captured=captured)
 
 # Action Routes (To Update)
 
@@ -145,19 +147,23 @@ def login_action():
 def capture_action(pokemon_id):
   # implement save newly captured pokemon, show a message then reload page
   current_user.catch_pokemon(pokemon_id,request.form['text'])
-  flash("pokemon with id cauyght")
+  flash("Pokemon with ID "+pokemon_id+" caught and named as "+request.form['text'])
   return redirect(request.referrer)
 
 @app.route("/rename-pokemon/<int:pokemon_id>", methods=['POST'])
 @jwt_required()
 def rename_action(pokemon_id):
   # implement rename pokemon, show a message then reload page
+  current_user.rename_pokemon(pokemon_id,request.form['text'])
+  flash("Pokemon of ID "+pokemon_id+" renamed to "+request.form['text'])
   return redirect(request.referrer)
 
 @app.route("/release-pokemon/<int:pokemon_id>", methods=['GET'])
 @jwt_required()
 def release_action(pokemon_id):
   # implement release pokemon, show a message then reload page
+  current_user.release_pokemon(pokemon_id)
+  flash("Pokemon of ID "+pokemon_id+" released")
   return redirect(request.referrer)
 
 if __name__ == "__main__":
