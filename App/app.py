@@ -147,7 +147,7 @@ def login_action():
 def capture_action(pokemon_id):
   # implement save newly captured pokemon, show a message then reload page
   current_user.catch_pokemon(pokemon_id,request.form['text'])
-  flash("Pokemon with ID "+pokemon_id+" caught and named as "+request.form['text'])
+  flash("Pokemon with ID "+str(pokemon_id)+" caught and named as "+request.form['text'])
   return redirect(request.referrer)
 
 @app.route("/rename-pokemon/<int:pokemon_id>", methods=['POST'])
@@ -155,7 +155,7 @@ def capture_action(pokemon_id):
 def rename_action(pokemon_id):
   # implement rename pokemon, show a message then reload page
   current_user.rename_pokemon(pokemon_id,request.form['text'])
-  flash("Pokemon of ID "+pokemon_id+" renamed to "+request.form['text'])
+  flash("Pokemon of ID "+str(pokemon_id)+" renamed to "+request.form['text'])
   return redirect(request.referrer)
 
 @app.route("/release-pokemon/<int:pokemon_id>", methods=['GET'])
@@ -163,7 +163,7 @@ def rename_action(pokemon_id):
 def release_action(pokemon_id):
   # implement release pokemon, show a message then reload page
   current_user.release_pokemon(pokemon_id)
-  flash("Pokemon of ID "+pokemon_id+" released")
+  flash("Pokemon of ID "+str(pokemon_id)+" released")
   return redirect(request.referrer)
 
 if __name__ == "__main__":
