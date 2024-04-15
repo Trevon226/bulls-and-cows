@@ -2,87 +2,36 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 db = SQLAlchemy()
 
-class UserPokemon(db.Model):
-  id = db.Column(db.Integer, primary_key=True)
-  user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-  pokemon_id = db.Column(db.Integer, db.ForeignKey('pokemon.id'))
-  pokemon = db.relationship('Pokemon')
-  name = db.Column(db.String(50))
-
-  def __init__(self, user_id, pokemon_id, name):
-    self.user_id = user_id
-    self.pokemon_id = pokemon_id
-    self.name = name
-  
-  def __repr__(self):
-      return f'<UserPokemon {self.id} : {self.name} trainer {self.user.username}>'
-  
-  def get_json(self):
-    return{
-      'id': self.id,
-      'name': self.name,
-      'species': self.pokemon.name
-    }
-
+ALLOWED_TRIES=3
 class User(db.Model):
+  __tablename__ = "User"
   id = db.Column(db.Integer, primary_key=True)
   username = db.Column(db.String(80), unique=True, nullable=False)
   email = db.Column(db.String(120), unique=True, nullable=False)
   password = db.Column(db.String(120), nullable=False)
-  pokemon = db.relationship('UserPokemon', backref='user')
+  attempts = db.relationship('Attempt', backref='user') #list of all attempts from every mysterynumber this user tried
+  #attributes below can be calculated from attempts but is inefficient
+  num_tries = db.Column(db.Integer, nullable=False, default=0)
+  num_success = db.Column(db.Integer, nullable=False, default=0)
+  num_attempts = db.Column(db.Integer, nullable=False, default=0)
 
   def __init__(self, username, email, password):
     self.username = username
     self.email = email
     self.set_password(password)
+    # trying to commit here because YO WHY NOT
+    # db.session.add(self)
+    # db.session.commit()
   
-
-  def catch_pokemon(self, pokemon_id, name):
-    poke = Pokemon.query.get(pokemon_id)
-    if poke:
-      try:
-        pokemon = UserPokemon(self.id, pokemon_id, name)
-        db.session.add(pokemon)
-        db.session.commit()
-        return pokemon
-      except Exception as e:
-        print(e)
-        db.session.rollback()
-        return None
-    return None
-
-  def release_pokemon(self, poke_id):
-    poke = UserPokemon.query.get(poke_id)
-    if poke.user == self:
-      db.session.delete(poke)
-      db.session.commit()
-      return True
-    return None
-
-  def rename_pokemon(self, poke_id, name):
-    poke = UserPokemon.query.get(poke_id)
-    if poke.user == self:
-      poke.name = name
-      db.session.add(poke)
-      db.session.commit()
-      return True
-    return None
-    
-  #hashes the password parameter and stores it in the object
   def set_password(self, password):
-      """Create hashed password."""
-      self.password = generate_password_hash(password, method='sha256')
+    self.password = generate_password_hash(password, method='sha256')
   
-  #Returns true if the parameter is equal to the object’s password property
   def check_password(self, password):
-      """Check hashed password."""
-      return check_password_hash(self.password, password)
+    return check_password_hash(self.password, password)
   
-  #To String method
   def __repr__(self):
-      return f'<User {self.id}: {self.username}>'
-
-
+    return f'<User {self.id}: {self.username}>'
+  
   def get_json(self):
     return {
       'id': self.id,
@@ -90,32 +39,58 @@ class User(db.Model):
       'email': self.email
     }
 
-class Pokemon(db.Model):
-  id = db.Column(db.Integer, primary_key=True)
-  name = db.Column(db.String(255), nullable=False)
-  attack = db.Column(db.Integer, nullable=False)
-  defense = db.Column(db.Integer, nullable=False)
-  hp = db.Column(db.Integer, nullable=False)
-  height = db.Column(db.Float) 
-  sp_attack = db.Column(db.Integer, nullable=False)
-  sp_defense = db.Column(db.Integer, nullable=False)
-  speed = db.Column(db.Integer, nullable=False)
-  type1 = db.Column(db.String(255), nullable=False)
-  type2 = db.Column(db.String(255), default=None)
-  weight = db.Column(db.Float)
 
-  def get_json(self):
-   return {
-     'pokemon_id': self.id,
-     'name': self.name,
-     'attack': self.attack,
-     'defense': self.defense,
-     'hp': self.hp,
-     'height': self.height,
-     'sp_attack': self.sp_attack,
-     'sp_defense': self.sp_defense,
-     'speed': self.speed,
-     'type1': self.type1,
-     'type2': self.type2,
-     'weight': self.weight
-   }
+class Attempt(db.Model):
+  __tablename__ = "Attempt"
+  id = db.Column(db.Integer, primary_key=True)
+  user_id = db.Column(db.Integer, db.ForeignKey('User.id'), nullable=False)
+  mysterynumber_id = db.Column(db.Integer, db.ForeignKey('MysteryNumber.id'), nullable=False)
+  success = db.Column(db.Boolean, nullable=False, default=False)
+  tries = db.Column(db.Integer, nullable=False)
+  
+  def __init__(self, user, mystery):
+    self.user_id = user.id
+    self.mysterynumber_id = mystery.id
+    # trying to commit here because YO WHY NOT
+    db.session.add(self)
+    db.session.commit()
+
+  def guess(self, number, user, mystery):
+    bulls = 0
+    cows = 0
+    if self.tries==ALLOWED_TRIES:
+      return
+    self.tries += 1
+    user.num_tries += 1
+    mystery.num_tries += 1
+    success = number==mystery.number
+    if success or self.tries==ALLOWED_TRIES:
+      user.num_attempts += 1
+      user.num_success += int(success)
+      mystery.num_attempts += 1
+      mystery.num_success += int(success)
+    # trying to commit here because YO WHY NOT
+    db.session.add(self)
+    db.session.add(user)
+    db.session.add(mystery)
+    db.session.commit()
+    return {"bulls":bulls, "cows":cows}
+
+
+class MysteryNumber(db.Model):
+  __tablename__ = "MysteryNumber"
+  id = db.Column(db.Integer, primary_key=True)
+  number = db.Column(db.Integer, nullable=False)
+  birthday = db.Column(db.Integer, nullable=False) #treated as date
+  attempts = db.relationship('Attempt', backref='MysteryNumber') #list of all attempts from each user on this mysterynumber
+  #attributes below can be calculated from attempts but is inefficient
+  num_tries = db.Column(db.Integer, nullable=False, default=0)
+  num_success = db.Column(db.Integer, nullable=False, default=0)
+  num_attempts = db.Column(db.Integer, nullable=False, default=0)
+
+  def __init__(self, number, birthday):
+    self.number = number
+    self.birthday = birthday
+    # trying to commit here because YO WHY NOT
+    db.session.add(self)
+    db.session.commit()

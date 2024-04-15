@@ -1,4 +1,5 @@
 import os, csv
+import random
 import datetime
 from json import dumps
 from flask import Flask, jsonify, request, redirect, render_template, url_for, flash
@@ -13,7 +14,7 @@ from flask_jwt_extended import (
     unset_jwt_cookies,
     current_user
 )
-from .models import db, User, UserPokemon, Pokemon
+from .models import db, MysteryNumber, User, Attempt
 
 # Configure Flask App
 app = Flask(__name__)
@@ -36,6 +37,29 @@ app.app_context().push()
 CORS(app)
 jwt = JWTManager(app)
 
+def get_gmt_start_of_day(): # could've done research or could've asked gpt cuz python :/
+  # Get current date
+  current_date = datetime.datetime.now().date()
+  # Combine current date with midnight time
+  midnight = datetime.datetime.combine(current_date, datetime.time.min)
+  # Convert to Unix timestamp
+  unix_timestamp = int(midnight.timestamp())
+  return unix_timestamp
+
+def get_current_mystery():
+  current_mystery=MysteryNumber.query.filter_by(birthday=get_gmt_start_of_day()).first()
+  if not current_mystery:
+    return MysteryNumber(random.randint(0,9999), get_gmt_start_of_day())
+  return current_mystery
+
+def current_user_attempt(current_user):
+  current_mystery=get_current_mystery()
+  for attempt in current_user.attempts:
+    if attempt.mysterynumber_id == current_mystery.id:
+      return attempt
+  return Attempt(current_user,current_mystery)
+
+
 # JWT Config to enable current_user
 @jwt.user_identity_loader
 def user_identity_lookup(user):
@@ -53,32 +77,13 @@ def user_lookup_callback(_jwt_header, jwt_data):
 def initialize_db():
   db.drop_all()
   db.create_all()
-  with open('pokemon.csv', newline='', encoding='utf8') as csvfile:
-    reader = csv.DictReader(csvfile)
-    for row in reader:
-      if row['height_m'] == '':
-        row['height_m'] = None
-      if row['weight_kg'] == '':
-        row['weight_kg'] = None
-      if row['type2'] == '':
-        row['type2'] = None
-
-      pokemon = Pokemon(name=row['name'], attack=row['attack'], defense=row['defense'], sp_attack=row['sp_attack'], sp_defense=row['sp_defense'], weight=row['weight_kg'], height=row['height_m'], hp=row['hp'], speed=row['speed'], type1=row['type1'], type2=row['type2'])
-      db.session.add(pokemon)
-    bob = User(username='bob', email="bob@mail.com", password="bobpass")
-    db.session.add(bob)
-    db.session.commit()
-    bob.catch_pokemon(1, "Benny")
-    bob.catch_pokemon(25, "Saul")
+  bob = User(username='bob', email="bob@mail.com", password="bobpass")
+  db.session.add(bob)
+  db.session.commit()
 
 # ********** Routes **************
 
 # Template implementation (don't change)
-
-@app.route('/init')
-def init_route():
-  initialize_db()
-  return redirect(url_for('login_page'))
 
 @app.route("/", methods=['GET'])
 def login_page():
@@ -86,7 +91,7 @@ def login_page():
 
 @app.route("/signup", methods=['GET'])
 def signup_page():
-    return render_template("signup.html")
+  return render_template("signup.html")
 
 @app.route("/signup", methods=['POST'])
 def signup_action():
@@ -119,13 +124,10 @@ def logout_action():
 
 # Page Routes (To Update)
 @app.route("/app", methods=['GET'])
-@app.route("/app/<int:pokemon_id>", methods=['GET'])
 @jwt_required()
 def home_page(pokemon_id=1):
     # update pass relevant data to template
-    poke=Pokemon.query.filter_by(id=pokemon_id).first()
-    captured=UserPokemon.query.filter_by(user_id=current_user.id).all()
-    return render_template("home.html", poke=poke, pokemon=Pokemon.query.all(), captured=captured)
+    return render_template("home.html")
 
 # Action Routes (To Update)
 
@@ -142,29 +144,11 @@ def login_action():
   flash("Login Successful")
   return response
 
-@app.route("/pokemon/<int:pokemon_id>", methods=['POST'])
+@app.route("/guess/<int:number>", methods=['POST'])
 @jwt_required()
-def capture_action(pokemon_id):
-  # implement save newly captured pokemon, show a message then reload page
-  current_user.catch_pokemon(pokemon_id,request.form['text'])
-  flash("Pokemon with ID "+str(pokemon_id)+" caught and named as "+request.form['text'])
-  return redirect(request.referrer)
-
-@app.route("/rename-pokemon/<int:pokemon_id>", methods=['POST'])
-@jwt_required()
-def rename_action(pokemon_id):
-  # implement rename pokemon, show a message then reload page
-  current_user.rename_pokemon(pokemon_id,request.form['text'])
-  flash("Pokemon of ID "+str(pokemon_id)+" renamed to "+request.form['text'])
-  return redirect(request.referrer)
-
-@app.route("/release-pokemon/<int:pokemon_id>", methods=['GET'])
-@jwt_required()
-def release_action(pokemon_id):
-  # implement release pokemon, show a message then reload page
-  current_user.release_pokemon(pokemon_id)
-  flash("Pokemon of ID "+str(pokemon_id)+" released")
-  return redirect(request.referrer)
+def guess(number):
+  attempt = current_user_attempt(current_user)
+  return dumps(attempt.guess(number))
 
 if __name__ == "__main__":
   app.run(host='0.0.0.0', port=8080)
