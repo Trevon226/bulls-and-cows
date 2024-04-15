@@ -1,29 +1,8 @@
 # INFO 2602 Assignment 2
 
-
 # Setup
-Install dependencies
-
-'''
-pip install -r requirements.txt
-'''
+- Install dependencies via `pip install -r requirements.txt`
+- Initialise the database via `flask init`
 
 # Running
-Run the server
-
-'''
-flask run
-'''
-
-# Testing
-Install node dependencies
-
-'''
-npm install
-'''
-
-Then run test command
-
-'''
-npm run test
-'''
+Run the server via `flask run`
