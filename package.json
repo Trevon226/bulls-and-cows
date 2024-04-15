@@ -1,23 +1,24 @@
 {
-  "name": "info2602a2",
+  "name": "bulls-and-cows",
   "version": "1.1.0",
-  "description": "",
-  "main": "test.js",
+  "description": "bulls and cows game for university group project",
+  "main": "index.js",
   "scripts": {
     "start": "flask run"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/uwidcit/info2602a2.git"
+    "url": "git+https://github.com/uni-paul-taylor2/bulls-and-cows.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "python",
+    "is",
+    "trash"
+  ],
+  "author": "Paul, Jerell, Runako, Trevon",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/uwidcit/info2602a2/issues"
+    "url": "https://github.com/uni-paul-taylor2/bulls-and-cows/issues"
   },
-  "homepage": "https://github.com/uwidcit/info2602a2#readme",
-  "dependencies": {
-    "testsuite3": "^1.1.0"
-  }
+  "homepage": "https://github.com/uni-paul-taylor2/bulls-and-cows#readme"
 }
