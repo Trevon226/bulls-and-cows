@@ -126,8 +126,9 @@ def logout_action():
 @app.route("/app", methods=['GET'])
 @jwt_required()
 def home_page(pokemon_id=1):
-    # update pass relevant data to template
-    return render_template("home.html")
+  current_mystery = get_current_mystery()
+  current_attempt = current_user_attempt(current_user)
+  return render_template("home.html", current_mystery=current_mystery, current_attempt=current_attempt)
 
 # Action Routes (To Update)
 
@@ -135,7 +136,6 @@ def home_page(pokemon_id=1):
 def login_action():
   user = User.query.filter_by(username=request.form["username"]).first()
   if not user or not user.check_password(request.form["password"]):
-    #flash(dumps({"error":'bad username/password given'}))
     flash("Incorrect username or password")
     return redirect(url_for('login_action'))
   token = create_access_token(identity=user)
@@ -144,11 +144,29 @@ def login_action():
   flash("Login Successful")
   return response
 
-@app.route("/guess/<int:number>", methods=['POST'])
+@app.route("/guess", methods=['POST']) #was "/guess/<int:number>"
 @jwt_required()
-def guess(number):
+def guess():
+  number = int(request.form['number'])
   attempt = current_user_attempt(current_user)
-  return dumps(attempt.guess(number))
+  responses = {
+    "-1": "Cannot Guess any more for the day",
+    "0": "Daily number failed, try again",
+    "1": "Daily number successfully guessed!"
+  }
+  flash(responses[ str(attempt.guess(number,current_user,get_current_mystery())) ])
+  return redirect(url_for('home_page'))
+
+@app.route("/stats", methods=['GET'])
+@app.route("/stats/<int:id>", methods=['GET'])
+@jwt_required()
+def stats(id):
+  if not id:
+    id = current_user.id
+  user = User.query.filter_by(id=id).first()
+  if not user:
+    user = current_user #prevent null error
+  return render_template("stats.html", user=user, users=User.query.all(), mysterynumber=get_current_mystery())
 
 if __name__ == "__main__":
   app.run(host='0.0.0.0', port=8080)
