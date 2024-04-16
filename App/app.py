@@ -5,6 +5,7 @@ from json import dumps
 from flask import Flask, jsonify, request, redirect, render_template, url_for, flash
 from flask_cors import CORS
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.sql import case
 from flask_jwt_extended import (
     JWTManager,
     create_access_token,
@@ -128,7 +129,7 @@ def logout_action():
 def home_page(pokemon_id=1):
   current_mystery = get_current_mystery()
   current_attempt = current_user_attempt(current_user)
-  return render_template("home.html", current_mystery=current_mystery, current_attempt=current_attempt)
+  return render_template("home.html", current_mystery=current_mystery, current_attempt=current_attempt, user=current_user)
 
 # Action Routes (To Update)
 
@@ -144,7 +145,7 @@ def login_action():
   flash("Login Successful")
   return response
 
-@app.route("/guess", methods=['POST']) #was "/guess/<int:number>"
+@app.route("/guess", methods=['POST'])
 @jwt_required()
 def guess():
   number = int(request.form['number'])
@@ -157,16 +158,14 @@ def guess():
   flash(responses[ str(attempt.guess(number,current_user,get_current_mystery())) ])
   return redirect(url_for('home_page'))
 
-@app.route("/stats", methods=['GET'])
 @app.route("/stats/<int:id>", methods=['GET'])
 @jwt_required()
 def stats(id):
-  if not id:
-    id = current_user.id
   user = User.query.filter_by(id=id).first()
   if not user:
-    user = current_user #prevent null error
-  return render_template("stats.html", user=user, users=User.query.all(), mysterynumber=get_current_mystery())
+    return "Forbidden",403
+  users = User.query.order_by(case({User.num_success==0: 0}, else_=User.num_tries / User.num_success)).all()
+  return render_template("stats.html", user=user, users=users, mysterynumber=get_current_mystery())
 
 if __name__ == "__main__":
   app.run(host='0.0.0.0', port=8080)

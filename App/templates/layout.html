@@ -56,11 +56,12 @@
 <body>
   <nav>
     <div class="nav-wrapper red darken-1">
+      {% block link_left %}{% endblock %}
       <a href="#!" class="brand-logo center">{% block page %}{% endblock %}</a>
-      {% block link %}{% endblock %}
+      {% block link_right %}{% endblock %}
     </div>
   </nav>
-  <div>
+  <div style="height:90%">
     <div class="messages">
       {% with messages = get_flashed_messages() %}
       {% if messages %}

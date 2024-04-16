@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game Stats</title>
+</head>
+<body>
+    <h1>Game Stats</h1>
+
+    <h2>Current Mystery Number Stats</h2>
+    <p>Number of Attempts: {{ mysterynumber.num_attempts }}</p>
+    <p>Number of Successes: {{ mysterynumber.num_success }}</p>
+    <p>Number of Failures: {{ mysterynumber.num_attempts - mysterynumber.num_success }}</p>
+    <p>Success Rate: {{ ((
+      1 if mysterynumber.num_attempts==mysterynumber.num_success else mysterynumber.num_success/(mysterynumber.num_attempts-mysterynumber.num_success)
+    )*100) | round(2) }}%</p>
+
+    <h2>User Stats</h2>
+    <p>Username: {{ user.username }}</p>
+    <p>Number of Attempts: {{ user.num_attempts }}</p>
+    <p>Number of Successes: {{ user.num_success }}</p>
+    <p>Number of Total Tries: {{ user.num_tries }}</p>
+    <p>Guess/Success Ratio: {{ (
+      0 if user.num_success==0 else user.num_tries/user.num_success
+    ) | round(2) }}</p>
+
+    <h2>User Leaderboard</h2>
+    <ol>
+        {% for u in users %}
+        <li><a href="/stats/{{ u.id }}" {% if u.id == user.id %}style="font-weight: bold;"{% endif %}>
+          <span>Username: {{ u.username }}</span>
+          <span>Guess/Success Ratio: {{ (
+            0 if user.num_success==0 else user.num_tries/user.num_success
+          ) | round(2) }}</span>
+        </a></li>
+        {% endfor %}
+    </ol>
+</body>
+</html>
