@@ -10,7 +10,7 @@
     <p>Number of Attempts: {{ mysterynumber.num_attempts }}</p>
     <p>Number of Successes: {{ mysterynumber.num_success }}</p>
     <p>Number of Failures: {{ mysterynumber.num_attempts - mysterynumber.num_success }}</p>
-    <p>Success Rate: {{ ((
+    <p title="Percentage of Users that Succeeded with today's Number">Success Rate: {{ ((
       1 if mysterynumber.num_attempts==mysterynumber.num_success else mysterynumber.num_success/(mysterynumber.num_attempts-mysterynumber.num_success)
     )*100) | round(2) }}%</p>
 
@@ -19,18 +19,18 @@
     <p>Number of Attempts: {{ user.num_attempts }}</p>
     <p>Number of Successes: {{ user.num_success }}</p>
     <p>Number of Total Tries: {{ user.num_tries }}</p>
-    <p>Guess/Success Ratio: {{ (
-      0 if user.num_success==0 else user.num_tries/user.num_success
-    ) | round(2) }}</p>
+    <p title="Amount of Successful Guesses">Success Rate: {{ ((
+      0 if user.num_tries==0 else user.num_success/user.num_tries
+    )*100) | round(2) }}%</p>
 
     <h2>User Leaderboard</h2>
     <ol>
         {% for u in users %}
         <li><a href="/stats/{{ u.id }}" {% if u.id == user.id %}style="font-weight: bold;"{% endif %}>
           <span>Username: {{ u.username }}</span>
-          <span>Guess/Success Ratio: {{ (
-            0 if user.num_success==0 else user.num_tries/user.num_success
-          ) | round(2) }}</span>
+          <span title="Amount of Successful Guesses">Success Rate: {{ ((
+            0 if u.num_tries==0 else u.num_success/u.num_tries
+          )*100) | round(2) }}%</span>
         </a></li>
         {% endfor %}
     </ol>

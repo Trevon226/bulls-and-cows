@@ -5,7 +5,7 @@ from json import dumps
 from flask import Flask, jsonify, request, redirect, render_template, url_for, flash
 from flask_cors import CORS
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.sql import case
+from sqlalchemy.sql import case, desc
 from flask_jwt_extended import (
     JWTManager,
     create_access_token,
@@ -164,7 +164,8 @@ def stats(id):
   user = User.query.filter_by(id=id).first()
   if not user:
     return "Forbidden",403
-  users = User.query.order_by(case({User.num_success==0: 0}, else_=User.num_tries / User.num_success)).all()
+  #users = User.query.order_by(case({User.num_success==0: 0}, else_=User.num_tries / User.num_success)).all()
+  users = User.query.order_by(desc(case({User.num_tries==0: 0}, else_=User.num_success/User.num_tries))).all()
   return render_template("stats.html", user=user, users=users, mysterynumber=get_current_mystery())
 
 if __name__ == "__main__":
