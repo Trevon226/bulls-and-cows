@@ -128,6 +128,7 @@ def logout_action():
 @jwt_required()
 def home_page(pokemon_id=1):
   current_mystery = get_current_mystery()
+  print(current_mystery.number)
   current_attempt = current_user_attempt(current_user)
   return render_template("home.html", current_mystery=current_mystery, current_attempt=current_attempt, user=current_user)
 

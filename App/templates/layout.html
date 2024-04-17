@@ -49,15 +49,25 @@
     .input-field .prefix.active {
       color: #000;
     }
+    .mynav{
+      position:fixed;
+      top:0;
+      width:100%;
+      padding: 0 10px;
+    }
   </style>
 
 </head>
 
 <body>
   <nav>
+    <div class="nav-wrapper red darken-1"></div>
+    <!-- this navbar is unseen but fills space for the sticky navbar below to not be over elements at top of page -->
+  </nav>
+  <nav class="mynav red darken-1">
     <div class="nav-wrapper red darken-1">
       {% block link_left %}{% endblock %}
-      <a href="#!" class="brand-logo center">{% block page %}{% endblock %}</a>
+      <a href="/app" class="brand-logo center">{% block page %}{% endblock %}</a>
       {% block link_right %}{% endblock %}
     </div>
   </nav>
