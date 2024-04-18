@@ -19,15 +19,16 @@ from .models import db, MysteryNumber, User, Attempt
 
 # Configure Flask App
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(app.root_path, 'data.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI') or 'sqlite:///' + os.path.join(app.root_path, 'data.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'MySecretKey'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'secret key'
 app.config['JWT_ACCESS_COOKIE_NAME'] = 'access_token'
 app.config['JWT_REFRESH_COOKIE_NAME'] = 'refresh_token'
 app.config["JWT_TOKEN_LOCATION"] = ["cookies", "headers"]
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(hours=15)
+datetimehours=int(os.environ.get("JWT_ACCESS_TOKEN_EXPIRES") or '15')
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(hours=datetimehours)
 app.config["JWT_COOKIE_SECURE"] = True
-app.config["JWT_SECRET_KEY"] = "super-secret"
+app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY") or "super-secret"
 app.config["JWT_COOKIE_CSRF_PROTECT"] = False
 app.config['JWT_HEADER_NAME'] = "Cookie"
 
@@ -85,6 +86,11 @@ def initialize_db():
 # ********** Routes **************
 
 # Template implementation (don't change)
+init_route = '/init/'+str(os.environ.get("INIT_PW") or '')
+@app.route(init_route, methods=['GET'])
+def init():
+  initialize_db()
+  return dumps({"message":"database initialized successfully"})
 
 @app.route("/", methods=['GET'])
 def login_page():
@@ -128,7 +134,6 @@ def logout_action():
 @jwt_required()
 def home_page(pokemon_id=1):
   current_mystery = get_current_mystery()
-  print(current_mystery.number)
   current_attempt = current_user_attempt(current_user)
   return render_template("home.html", current_mystery=current_mystery, current_attempt=current_attempt, user=current_user)
 

@@ -15,9 +15,6 @@ requiredFiles = [".replit", "replit.nix"]
 run = ["flask", "run"]
 deploymentTarget = "cloudrun"
 
-#[interpreter]
-#command = ["flask", "run"]
-
 [[ports]]
 localPort = 8080
 externalPort = 80
